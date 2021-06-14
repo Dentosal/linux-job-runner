@@ -73,7 +73,7 @@ Streams output of a job in binary blobs. Each blob is tagged to be either from s
 
 There will be two async-tasks reading the output of a process, one for stdout and one for stderr. For both tasks, a separate buffer of output history is maintained, along with a boolean marking process completion. This state is protected by a [`tokio::sync::RwLock`](https://docs.rs/tokio/1.6.1/tokio/sync/struct.RwLock.html). In addition, there will be a [`tokio::sync::Notify`](https://docs.rs/tokio/1.6.1/tokio/sync/struct.Notify.html). Every time the process writes more output, the listerners are woken up through the `Notify`.
 
-Each call of `Output` spawns async-tasks for stdio and stdout. They read the output buffer until the end. Then it checks if the process is completed (from the field). If yes, then the connection to client is closed to mark procress completion. Otherwise, it waits until the output reader task notifies it that new data is available, and then repeats the above process.
+Each call of `Output` spawns async-tasks for stdio and stdout. They read the output buffer until the end. Then it checks if the process is completed (from the field). If yes, then the connection to client is closed to mark process completion. Otherwise, it waits until the output reader task notifies it that new data is available, and then repeats the above process.
 
 ## CLI
 
