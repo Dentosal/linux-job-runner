@@ -28,7 +28,7 @@ In addition to limiting resource use with cgroups, job-runner also isolates jobs
 
 ## Communication and auth
 
-Clients communicate via gRPC with a simple protocol: One service with four endpoints. The communication is secured [RusTLS](https://github.com/ctz/rustls) which by design supports only modern, secure cipher suites. [Tonic](https://github.com/hyperium/tonic) is used to serve gRPC and almost automatically handles protocol buffers, encryption and related concerns.
+Clients communicate via gRPC with a simple protocol: One service with four endpoints. The communication is secured [RusTLS](https://github.com/ctz/rustls) which by design supports only modern, secure cipher suites. Only TLS 1.2/1.3 are used, and authentication is done using ECDSA, Ed25519 or RSA. RusTLS will remove support for cipher suites deemed insecure, and simply keeping the version up to date should be sufficient in the future as well. [Tonic](https://github.com/hyperium/tonic) is used to serve gRPC and almost automatically handles protocol buffers, encryption and related concerns.
 
 Authentication is implemented with mTLS. Server and client have different CA roots, which they are expected to exchange in a secure way. (Scenario-wise: the client CA is operated by the same organization that hosts job-runner). The server identifies each client with it's CommonName (CN) field of the certificate. The client CA only issues certificates with CN values to developers that are allowed to access the API. All running jobs are bound to the CN of the client calling `Start`, and only a client with that certificate is allowed to execute operations for that job.
 
