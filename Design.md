@@ -38,7 +38,7 @@ A more complete system should also support certificate revocation lists (CRL), s
 
 ### Start
 
-Starts a new job by spawning a process from given executable path and arguments. Returns a unique job id, that is used to specify the target job for other endpoints. If the executable is not found or cannot be executed, immediately returns an error.
+Starts a new job by spawning a process from given executable path and arguments. Returns a unique job id (UUID v4), that is used to specify the target job for other endpoints. If the executable is not found or cannot be executed, immediately returns an error.
 
 No security checks are applied to the program and arguments. If the client wishes to remove some files or start a fork bomb, it's allowed to do so.
 
@@ -67,8 +67,6 @@ As for high availablity, similar concerns apply. Again, coordination with multip
 ### Other tradeoffs and simplifications
 
 Full output history of all jobs is stored in memory, and is only removed on server restart. In a real system, the output would usually be streamed to a log database, or just into a file, to reduce memory pressure. After process termination logs should be either removed or moved to an archive (e.g. Amazon S3).
-
-Other simplification is about how jobs are identified. A proper implementation would use either UUIDs or user-given names, maybe even both. This implementation, however, uses sequential unsigned 64-bit integers to identify jobs. The CLI tool uses them as well, making it particularly error-prone when jobs are manually referenced. The job ids also reset to zero every time the server is restarted, so that no persitent storage is required. This may cause conflicts if the server is restarted. Using UUIDs would solve this issue automatically.
 
 To further simplify the implementation, process state change notifications. To wait a process terminates, a client must poll the status endpoint or read output of the process. When the output is not required, this is rather inefficient, but it reduces the complexity of the server. If better performance is required, an endpoint that only returns after a state change occurs (similar to long polling) could be implemented.
 
