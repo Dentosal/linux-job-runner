@@ -69,7 +69,12 @@ message JobStatus {
 
 Streams output of a job in binary blobs. Each blob is tagged to be either from stdout or stderr. Stream is automatically closed when the process completes and all output has been streamed. All calls to output stream the whole output history from the moment the process was started.
 
-All output of each process is stored in a separate memory buffer. For each call of output, a separate offset value for both IO streams is maintained.
+#### Internals
+
+There will be two async-tasks reading the output of a process, one for stdout and one for stderr. For both tasks, a separate buffer of output history is maintained, along with a boolean marking process completion. This state is protected by a [`tokio::sync::RwLock`](https://docs.rs/tokio/1.6.1/tokio/sync/struct.RwLock.html). In addition, there will be a [`tokio::sync::Notify`](https://docs.rs/tokio/1.6.1/tokio/sync/struct.Notify.html). Every time the process writes more output, the listerners are woken up through the `Notify`.
+
+Each call of `Output` spawns async-tasks for stdio and stdout. They read the output buffer until the end. Then it checks if the process is completed (from the field). If yes, then the connection to client is closed to mark procress completion. Otherwise, it waits until the output reader task notifies it that new data is available, and then repeats the above process.
+
 
 ## Scalability and high availability
 
