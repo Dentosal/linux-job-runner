@@ -40,7 +40,7 @@ A more complete system should also support certificate revocation lists (CRL), s
 
 Starts a new job by spawning a process from given executable path and arguments. Returns a unique job id (UUID v4), that is used to specify the target job for other endpoints. If the executable is not found or cannot be executed, immediately returns an error.
 
-No security checks are applied to the program and arguments. If the client wishes to remove some files or start a fork bomb, it's allowed to do so.
+No security checks are applied to the program and arguments. However, as the job is placed inside an isolated container, it shouldn't be able to do much damage. It can still consume resources in the limits that cgroup-limits allow, and it can flood it's output with thrash data.
 
 ### Stop
 
