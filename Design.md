@@ -52,6 +52,19 @@ Could be improved by sending `SIGTERM` shortly before `SIGKILL`, but I'm aiming 
 
 Returns job status, i.e. is it running, and the status code if the job has completed. If the job has been terminated with a signal, that is reported instead.
 
+```proto
+message JobStatus {
+    enum Status {
+        RUNNING = 0;    // Still running (value is zero)
+        COMPLETED = 1;  // Completed normally (value is return code)
+        SIGNAL = 2;     // Terminated by a signal (value is signal number)
+        MISSING = 3;    // No such process (or access denied) (value is zero)
+    }
+    Status status = 1;
+    int32 value = 2;
+}
+```
+
 ### Output
 
 Streams output of a job in binary blobs. Each blob is tagged to be either from stdout or stderr. Stream is automatically closed when the process completes and all output has been streamed. All calls to output stream the whole output history from the moment the process was started.
