@@ -75,6 +75,64 @@ There will be two async-tasks reading the output of a process, one for stdout an
 
 Each call of `Output` spawns async-tasks for stdio and stdout. They read the output buffer until the end. Then it checks if the process is completed (from the field). If yes, then the connection to client is closed to mark procress completion. Otherwise, it waits until the output reader task notifies it that new data is available, and then repeats the above process.
 
+## CLI
+
+The CLI can be used to operate the job runner. All CLI commands have the job server URL as the first argument and the actual command after that.
+
+```
+cli https://job-service.example.org:8000 subcommand arguments
+```
+
+It has the following subcommands:
+
+* `start <executable> [args]...` -- Starts a new job by spawning a process, prints the job id to stdout.
+* `stop jobid` -- Stops job with given id.
+* `status jobid` -- Prints job status to stdout.
+* `output jobid` -- Streams job stdout and stderr to respective output streams. Starts from the beginning of the job.
+
+### Example usage
+
+#### List directory
+
+```
+$ cli https://localhost:8000 start ls /usr
+bba87bff-3719-4f76-98d9-c8e86f03f7aa
+$ cli https://localhost:8000 output bba87bff-3719-4f76-98d9-c8e86f03f7aa
+bin
+games
+include
+lib
+lib32
+libexec
+local
+sbin
+share
+src
+$ cli https://localhost:8000 status bba87bff-3719-4f76-98d9-c8e86f03f7aa
+Completed 0
+```
+
+#### Stopping a process
+
+```
+$ cli https://localhost:8000 start yes
+a354142a-c59f-44dd-ac53-c0110943df2b
+$ cli https://localhost:8000 output a354142a-c59f-44dd-ac53-c0110943df2b
+y
+y
+y
+y
+y
+...     # Omitted
+y
+y
+^C      # Keyboard interrupt
+$ cli https://localhost:8000 stop a354142a-c59f-44dd-ac53-c0110943df2b
+Signal 9
+$ cli https://localhost:8000 status a354142a-c59f-44dd-ac53-c0110943df2b
+Signal 9
+```
+
 
 ## Scalability and high availability
 
