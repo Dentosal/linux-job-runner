@@ -36,6 +36,47 @@ A more complete system should also support certificate revocation lists (CRL), s
 
 ## Endpoints
 
+### Protobuf
+
+```proto3
+syntax = "proto3";
+
+package common;
+
+service TService {
+    rpc Start (JobStartRequest) returns (TargetJobId);
+    rpc Stop (TargetJobId) returns (JobStatus);
+    rpc Status (TargetJobId) returns (JobStatus);
+    rpc Output (TargetJobId) returns (stream OutputEvent);
+}
+
+message JobStartRequest {
+    string path = 1;
+    repeated string args = 2;
+}
+
+message TargetJobId {
+    bytes jobid = 1;    // UUID v4
+}
+
+message JobStatus {
+    oneof completed {               // Empty if still running
+        int32   status_code = 2;    // Completed normally
+        int32   signal = 3;         // Terminated by a signal
+    }
+}
+
+message OutputEvent {
+    enum Stream {
+        stdout = 0;
+        stderr = 1;
+    }
+    Stream stream = 1;
+    bytes output = 2;
+}
+
+```
+
 ### Start
 
 Starts a new job by spawning a process from given executable path and arguments. Returns a unique job id (UUID v4), that is used to specify the target job for other endpoints. If the executable is not found or cannot be executed, immediately returns an error.
@@ -51,19 +92,6 @@ Could be improved by sending `SIGTERM` shortly before `SIGKILL`, but I'm aiming 
 ### Status
 
 Returns job status, i.e. is it running, and the status code if the job has completed. If the job has been terminated with a signal, that is reported instead.
-
-```proto
-message JobStatus {
-    enum Status {
-        RUNNING = 0;    // Still running (value is zero)
-        COMPLETED = 1;  // Completed normally (value is return code)
-        SIGNAL = 2;     // Terminated by a signal (value is signal number)
-        MISSING = 3;    // No such process (or access denied) (value is zero)
-    }
-    Status status = 1;
-    int32 value = 2;
-}
-```
 
 ### Output
 
