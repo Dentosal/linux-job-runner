@@ -110,7 +110,7 @@ Each call of `Output` spawns async-tasks for stdio and stdout. They read the out
 The CLI can be used to operate the job runner. All CLI commands have the job server URL as the first argument and the actual command after that.
 
 ```
-cli https://job-service.example.org:8000 subcommand arguments
+cli grpcs://job-service.example.org:8000 subcommand arguments
 ```
 
 It has the following subcommands:
@@ -125,9 +125,9 @@ It has the following subcommands:
 #### List directory
 
 ```
-$ cli https://localhost:8000 start ls /usr
+$ cli grpcs://localhost:8000 start ls /usr
 bba87bff-3719-4f76-98d9-c8e86f03f7aa
-$ cli https://localhost:8000 output bba87bff-3719-4f76-98d9-c8e86f03f7aa
+$ cli grpcs://localhost:8000 output bba87bff-3719-4f76-98d9-c8e86f03f7aa
 bin
 games
 include
@@ -138,16 +138,16 @@ local
 sbin
 share
 src
-$ cli https://localhost:8000 status bba87bff-3719-4f76-98d9-c8e86f03f7aa
+$ cli grpcs://localhost:8000 status bba87bff-3719-4f76-98d9-c8e86f03f7aa
 Completed 0
 ```
 
 #### Stopping a process
 
 ```
-$ cli https://localhost:8000 start yes
+$ cli grpcs://localhost:8000 start yes
 a354142a-c59f-44dd-ac53-c0110943df2b
-$ cli https://localhost:8000 output a354142a-c59f-44dd-ac53-c0110943df2b
+$ cli grpcs://localhost:8000 output a354142a-c59f-44dd-ac53-c0110943df2b
 y
 y
 y
@@ -157,9 +157,9 @@ y
 y
 y
 ^C      # Keyboard interrupt
-$ cli https://localhost:8000 stop a354142a-c59f-44dd-ac53-c0110943df2b
+$ cli grpcs://localhost:8000 stop a354142a-c59f-44dd-ac53-c0110943df2b
 Signal 9
-$ cli https://localhost:8000 status a354142a-c59f-44dd-ac53-c0110943df2b
+$ cli grpcs://localhost:8000 status a354142a-c59f-44dd-ac53-c0110943df2b
 Signal 9
 ```
 
