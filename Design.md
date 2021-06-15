@@ -45,7 +45,7 @@ package common;
 
 service TService {
     rpc Start (JobStartRequest) returns (TargetJobId);
-    rpc Stop (TargetJobId) returns (JobStatus);
+    rpc Stop (TargetJobId) returns (StopSignalSent);
     rpc Status (TargetJobId) returns (JobStatus);
     rpc Output (TargetJobId) returns (stream OutputEvent);
 }
@@ -55,8 +55,10 @@ message JobStartRequest {
     repeated string args = 2;
 }
 
+message StopSignalSent {}
+
 message TargetJobId {
-    bytes jobid = 1;    // UUID v4
+    bytes jobid = 1;
 }
 
 message JobStatus {
@@ -85,7 +87,7 @@ No security checks are applied to the program and arguments. However, as the job
 
 ### Stop
 
-Cancels a job by sending `SIGKILL`. Stop only returns after the process has been terminated, and returns the status of the job. If job was already terminated before calling stop, the old state is returned without attempting termination.
+Cancels a job by sending `SIGKILL`. This is done asynchronously, and stop can return before the process has terminated. If the client must wait until the job has stopped, it can do so by polling `Status`.
 
 Could be improved by sending `SIGTERM` shortly before `SIGKILL`, but I'm aiming for simplicity here. Also separating soft and hard kills in the API level might be useful in some situations.
 
