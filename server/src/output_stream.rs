@@ -33,6 +33,29 @@ impl OutputHandler {
         }
     }
 
+    /// Sets up a new OutputHandler and the stream into it from any `AsyncRead`-object,
+    /// usually either ChildStdout or ChildStderr.
+    pub fn setup<R>(stream_type: OutputStream, pipe: R) -> Arc<Self>
+    where
+        R: tokio::io::AsyncRead + Unpin + Send + 'static,
+    {
+        use futures_util::StreamExt;
+
+        let arc_self = Arc::new(OutputHandler::new(stream_type));
+
+        let inner = arc_self.clone();
+        tokio::spawn(async move {
+            let mut out = tokio_util::io::ReaderStream::new(pipe);
+            while let Some(value) = out.next().await {
+                let x = value.expect("Process output error");
+                inner.push(x.to_vec()).await;
+            }
+            inner.complete().await;
+        });
+
+        arc_self
+    }
+
     /// Push new data to the history, notifying all waiting processes
     pub async fn push(&self, data: Vec<u8>) {
         let mut state = self.state.write().await;

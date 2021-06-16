@@ -1,4 +1,3 @@
-use futures_util::StreamExt;
 use std::os::unix::process::ExitStatusExt;
 use std::process::{ExitStatus, Stdio};
 use std::sync::Arc;
@@ -46,29 +45,8 @@ impl Job {
 
         let mut child = cmd.spawn().map_err(|e| format!("{:?}", e))?;
 
-        let stdout = Arc::new(OutputHandler::new(OutputStream::Stdout));
-        let b_out = stdout.clone();
-        let s_out = child.stdout.take().unwrap();
-        tokio::spawn(async move {
-            let mut out = tokio_util::io::ReaderStream::new(s_out);
-            while let Some(value) = out.next().await {
-                let x = value.expect("I/O error??");
-                b_out.push(x.to_vec()).await;
-            }
-            b_out.complete().await;
-        });
-
-        let stderr = Arc::new(OutputHandler::new(OutputStream::Stderr));
-        let b_err = stderr.clone();
-        let s_err = child.stderr.take().unwrap();
-        tokio::spawn(async move {
-            let mut out = tokio_util::io::ReaderStream::new(s_err);
-            while let Some(value) = out.next().await {
-                let x = value.expect("I/O error??");
-                b_err.push(x.to_vec()).await;
-            }
-            b_err.complete().await;
-        });
+        let stdout = OutputHandler::setup(OutputStream::Stdout, child.stdout.take().unwrap());
+        let stderr = OutputHandler::setup(OutputStream::Stderr, child.stderr.take().unwrap());
 
         Ok(Self {
             owner,
