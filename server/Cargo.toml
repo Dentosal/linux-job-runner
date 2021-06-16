@@ -12,6 +12,7 @@ tokio = {version = "1.6.1", features = ["full"]}
 tokio-stream = "0.1.6"
 tokio-util = {version = "0.6.7", features = ["io"]}
 futures-util = "0.3.15"
+x509-parser = "0.9.2"
 
 log = "0.4.14"
 env_logger = "0.8.3"
