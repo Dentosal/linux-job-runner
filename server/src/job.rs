@@ -26,6 +26,7 @@ fn completed_status(status: ExitStatus) -> JobStatus {
     }
 }
 
+/// A single running job, i.e. a process
 pub struct Job {
     pub owner: ClientName,
     child: Child,
@@ -77,6 +78,7 @@ impl Job {
         })
     }
 
+    /// Start an asynchronous kill operation
     pub fn start_kill(&mut self) {
         let _ = self.child.start_kill();
     }

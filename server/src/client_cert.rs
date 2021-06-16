@@ -1,10 +1,12 @@
 use tonic::transport::Certificate;
 use x509_parser::prelude::*;
 
+/// A CommonName extracted from a mTLS client certificate
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClientName(String);
+
 impl ClientName {
-    /// Extract subjectAltName fields from a DER-encoded certificate.
+    /// Extract subject CommonName fields from a DER-encoded certificate.
     /// Pre-condition: Certificate validated by the tonic server.
     /// Pre-condition: Root CA will not sign nonconforming certificates.
     /// Might panic if pre-conditions are not met.
@@ -19,6 +21,7 @@ impl ClientName {
         Self(cn.to_owned())
     }
 
+    /// Reads certificate info from a Tonic request
     pub fn from_request<T>(request: &tonic::Request<T>) -> Option<Self> {
         use std::borrow::Borrow;
 
