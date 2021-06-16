@@ -11,3 +11,6 @@ uuid = { version = "0.8.2", features = ["v4"] }
 
 [build-dependencies]
 tonic-build = {version = "0.4.2", features = ["prost"]}
+
+[dev-dependencies]
+portpicker = "0.1.0"
