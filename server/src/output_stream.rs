@@ -6,14 +6,19 @@ use tokio::sync::{Notify, RwLock};
 use common::output_event::Stream as OutputStream;
 use common::OutputEvent;
 
+/// Internal state of the `OutputHandler`
 struct State {
     history: Vec<Vec<u8>>,
     completed: bool,
 }
 
+/// Handles a single output stream
 pub struct OutputHandler {
+    /// Stdout or Stderr
     stream_type: OutputStream,
+    /// Internal state
     state: RwLock<State>,
+    /// State change notification
     notify: Notify,
 }
 impl OutputHandler {
@@ -28,12 +33,18 @@ impl OutputHandler {
         }
     }
 
+    /// Push new data to the history, notifying all waiting processes
     pub async fn push(&self, data: Vec<u8>) {
         let mut state = self.state.write().await;
+        assert!(
+            !state.completed,
+            "Trying to push more output to a completed stream"
+        );
         state.history.push(data);
         self.notify.notify_waiters();
     }
 
+    /// Mark the process as complete. `push` must not be called after this.
     pub async fn complete(&self) {
         let mut state = self.state.write().await;
         state.completed = true;
@@ -41,6 +52,7 @@ impl OutputHandler {
     }
 }
 
+/// Start a task that streams from an `OutputHandler` to a mpsc channel.
 pub fn stream_to(from: Arc<OutputHandler>, to: Sender<Result<OutputEvent, tonic::Status>>) {
     use std::borrow::Borrow;
     tokio::spawn(async move {
