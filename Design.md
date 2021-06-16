@@ -8,21 +8,14 @@ The jobs themselves are normal child processes of the runner. The runner configu
 
 ## Resource limits and isolation
 
-The job-runner uses cgroups V1 for resource limits. Cgroups will be used through an API wrapper like [controlgroup-rs](https://github.com/ordovicia/controlgroup-rs) or [cgroups-fs](https://github.com/frol/cgroups-fs). There are many tweakable options for limiting resource use, but the following minimal set has been selected to demonstrate how they work. In particular, the following cgroup parameters will be set:
-* [CPU](https://kernel.googlesource.com/pub/scm/linux/kernel/git/glommer/memcg/+/cpu_stat/Documentation/cgroups/cpu.txt):
-    * `cpu.cfs_period_us` (keep default: 100ms)
-    * `cpu.cfs_quota_us`
-        * `cfs_period_us` means one cpu cores worth of usage
-        * `cfs_period_us` / 2 means 50% of one core
-* [Memory](https://kernel.googlesource.com/pub/scm/linux/kernel/git/glommer/memcg/+/cpu_stat/Documentation/cgroups/memory.txt):
-    * `memory.limit_in_bytes` (max amount of memory to be used, hard limit)
-    * `memory.soft_limit_in_bytes` (set to 75% of `memory.limit_in_bytes`)
-    * `memory.memsw.limit_in_bytes` (set to `memory.limit_in_bytes`)
-* [Block IO](https://kernel.googlesource.com/pub/scm/linux/kernel/git/glommer/memcg/+/cpu_stat/Documentation/cgroups/blkio-controller.txt): (Device list readable from `/proc/partitions`)
-    * `blkio.throttle.read_bps_device`
-    * `blkio.throttle.write_bps_device`
-    * `blkio.throttle.read_iops_device`
-    * `blkio.throttle.write_iops_device`
+The job-runner uses [cgroups V2](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html) for resource limits. There are many tweakable options for limiting resource use, but the following minimal set has been selected to demonstrate how they work. In particular, the following cgroup parameters will be set:
+* CPU:
+    * `cpu.max` quota and period
+* Memory:
+    * `memory.max` (max amount of memory to be used, hard limit)
+    * `memory.high` (set to 75% of `memory.max`)
+* Disk IO: (Device list readable from `/proc/partitions`)
+    * `io.max.{rbps,wbps,riops,wiops}`
 
 In addition to limiting resource use with cgroups, job-runner also isolates jobs from each other using namespaces. A PID namespace is set up to make sure the job cannot kill processes not spawned by it, and to make sure all child processes are terminated together with the actual job. A mount namespace is used to limit process to a subset of the file system, together with [`pivot_root(2)`](https://linux.die.net/man/2/pivot_root) (see [Understanding Containerization By Recreating Docker](https://itnext.io/linux-container-from-scratch-339c3ba0411d), search for pivot_root). Finally, a network namespace is created to limit network access of the jobs. It must be used together with [Virtual ethernet (VETH)](https://developers.redhat.com/blog/2018/10/22/introduction-to-linux-interfaces-for-virtual-networking#veth) and bridge interfaces if jobs should be allowed to communicate between each other. This also means that internet access must be granted separately.
 
