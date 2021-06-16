@@ -16,7 +16,7 @@ case "$1" in
         echo "Running format check"
         cargo fmt -- --check
         echo "Running clippy"
-        cargo clippy
+        cargo clippy --all
 
         ;;
 
