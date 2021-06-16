@@ -1,0 +1,10 @@
+# Rust
+/target
+Cargo.lock
+
+# Temporary dirs and files in root
+/t_*
+/tmp_*
+
+# Secrets
+/certs
