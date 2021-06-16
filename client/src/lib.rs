@@ -23,6 +23,8 @@ pub struct TlsConfig {
     pub client_key: Vec<u8>,
 }
 
+// TODO: create a proper error type, and add conversions to it
+
 type DResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 pub struct Client {
@@ -109,7 +111,7 @@ impl Client {
     pub async fn output(
         &mut self,
         jobid: JobId,
-        tx: Sender<(OutputStream, Vec<u8>)>,
+        tx: Sender<Result<(OutputStream, Vec<u8>), tonic::Status>>,
     ) -> DResult<()> {
         let response = self
             .client
@@ -120,11 +122,18 @@ impl Client {
 
         let mut inner = response.into_inner();
         tokio::spawn(async move {
-            while let Some(res) = inner.message().await.unwrap() {
-                let event = OutputStream::from_i32(res.stream).unwrap();
-                let r = tx.send((event, res.output)).await;
-                // TODO: error handling
-                if r.is_err() {
+            loop {
+                let r = match inner.message().await {
+                    Ok(Some(msg)) => {
+                        let event = OutputStream::from_i32(msg.stream).unwrap();
+                        Ok((event, msg.output))
+                    }
+                    Ok(None) => break,
+                    Err(err) => Err(err),
+                };
+                let is_err = r.is_err();
+                tx.send(r).await.expect("Receiver has hung up");
+                if is_err {
                     break;
                 }
             }

@@ -67,16 +67,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let (tx, mut rx) = tokio::sync::mpsc::channel(2);
             client.output(JobId::parse(&jobid)?, tx).await?;
 
+            // If writing to stdout or stderr fails, there is no reason to continue => panic
+
             let mut out = std::io::stdout();
             let mut err = std::io::stderr();
 
-            while let Some((event_type, event_data)) = rx.recv().await {
-                match event_type {
-                    OutputStream::Stdout => out.write_all(&event_data).unwrap(),
-                    OutputStream::Stderr => err.write_all(&event_data).unwrap(),
+            while let Some(event) = rx.recv().await {
+                match event? {
+                    (OutputStream::Stdout, data) => out.write_all(&data).unwrap(),
+                    (OutputStream::Stderr, data) => err.write_all(&data).unwrap(),
                 }
             }
-            // TODO: error handling
+
             out.flush().unwrap();
             err.flush().unwrap();
         }
