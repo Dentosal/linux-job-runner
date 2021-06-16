@@ -43,25 +43,33 @@ impl OutputHandler {
 
 pub fn stream_to(from: Arc<OutputHandler>, to: Sender<Result<OutputEvent, tonic::Status>>) {
     use std::borrow::Borrow;
-    // TODO: error handling
-    let out_to = to;
     tokio::spawn(async move {
         let mut index = 0;
         loop {
             let h: &OutputHandler = from.borrow();
             let state = h.state.read().await;
             if index < state.history.len() {
-                out_to
+                let send_result = to
                     .send(Ok(OutputEvent {
                         stream: h.stream_type as i32,
                         output: state.history[index].clone(),
                     }))
-                    .await
-                    .unwrap(); // TODO: handle
+                    .await;
+
+                if send_result.is_err() {
+                    // Send failed, meaning that the other end has hung up.
+                    // In this case it doesn't make sense to stream any more
+                    // output, but this is not an error either.
+                    log::debug!("Stream receiver has hung up, ending stream");
+                    break;
+                }
+
                 index += 1;
             } else if state.completed {
+                // All content has been streamed
                 break;
             } else {
+                // Wait until more output is available
                 h.notify.notified().await;
             }
         }
