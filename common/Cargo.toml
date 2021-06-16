@@ -1,0 +1,13 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+prost = "0.7.0"
+tonic = {version = "0.4.3", features = ["tls"]}
+uuid = { version = "0.8.2", features = ["v4"] }
+
+[build-dependencies]
+tonic-build = {version = "0.4.2", features = ["prost"]}
