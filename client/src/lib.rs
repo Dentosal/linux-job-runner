@@ -13,8 +13,11 @@ pub use common::{JobId, JobStartRequest};
 
 #[derive(Debug, Clone)]
 pub struct TlsConfig {
+    /// Contents of the PEM-formatted server root CA certificate file
     pub server_root_ca_crt: Vec<u8>,
+    /// Contents of the PEM-formatted client certificate file
     pub client_crt: Vec<u8>,
+    /// Contents of the PEM-formatted client private key file
     pub client_key: Vec<u8>,
 }
 
@@ -46,7 +49,9 @@ impl Client {
         })
     }
 
-    /// Start a new job
+    /// Starts a new job by spawning a process from given executable path and arguments.
+    /// Returns a unique job id (UUID v4), that is used to specify the target job for other endpoints.
+    // If the executable is not found or cannot be executed, immediately returns an error.
     pub async fn start(&mut self, req: JobStartRequest) -> DResult<JobId> {
         let command = tonic::Request::new(req);
         let response = self.client.start(command).await?;
@@ -56,7 +61,9 @@ impl Client {
             .expect("Server returned invalid JobId"))
     }
 
-    /// Stop a job (non-blocking, use `wait` afterwards if needed)
+    /// Cancels a job by sending `SIGKILL`.
+    /// This is done asynchronously, and can return before the process has terminated.
+    /// If you must wait until the job has stopped, it can do so by calling `wait`.
     pub async fn stop(&mut self, jobid: JobId) -> DResult<()> {
         self.client
             .stop(tonic::Request::new(TargetJobId {
@@ -67,7 +74,8 @@ impl Client {
         Ok(())
     }
 
-    /// Get status of a job
+    /// Get job status, i.e. is it running, and the status code if the job has completed.
+    /// If the job has been terminated with a signal, that is reported instead.
     pub async fn status(&mut self, jobid: JobId) -> DResult<JobStatus> {
         let response = self
             .client
@@ -93,7 +101,9 @@ impl Client {
         }
     }
 
-    /// Stream output of a job to an mpsc queue
+    /// Stream output of a job to an mpsc queue.
+    /// Stream is automatically closed when the process completes and all output has been streamed.
+    /// All calls stream the whole output history from the moment the process was started.
     pub async fn output(
         &mut self,
         jobid: JobId,
