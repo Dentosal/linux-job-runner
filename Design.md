@@ -120,11 +120,16 @@ It has the following subcommands:
 * `status jobid` -- Prints job status to stdout.
 * `output jobid` -- Streams job stdout and stderr to respective output streams. Starts from the beginning of the job.
 
+TLS setup can be passed in through environment variables: `TLS_SERVER_ROOT_CA_CRT`, `TLS_CLIENT_CRT` and `TLS_CLIENT_KEY`. These should point to the PEM-encoded files: `_CRT`s to  certificates and `_KEY` to the private key. (A real program should probably prefix these with a semi-unique name, but that would require naming the project first.)
+
 ### Example usage
 
 #### List directory
 
 ```
+$ export TLS_SERVER_ROOT_CA_CRT=certs/ca_server/root-ca.crt
+$ export TLS_CLIENT_CRT=certs/client1/client.crt
+$ export TLS_CLIENT_KEY=certs/client1/client.key
 $ cli grpcs://localhost:8000 start ls /usr
 bba87bff-3719-4f76-98d9-c8e86f03f7aa
 $ cli grpcs://localhost:8000 output bba87bff-3719-4f76-98d9-c8e86f03f7aa
