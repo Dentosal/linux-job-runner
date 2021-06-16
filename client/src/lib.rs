@@ -1,3 +1,5 @@
+//! Client libarary for the job runner
+
 use std::convert::TryInto;
 
 use tokio::sync::mpsc::Sender;

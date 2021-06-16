@@ -53,6 +53,10 @@ cargo run --bin cli $SERVER stop $job_id
 cargo run --bin cli $SERVER status $job_id
 ```
 
+## Client libarary
+
+The client is also available as a Rust library, under the `client` folder. Documentation for the client can be generated with `cargo doc`, and after that it can be found from `target/doc/client/index.html`. For usage examples look into the [CLI code](client/src/bin/cli.rs), it uses all of the library features.
+
 ## Development
 
 Code is formatted with `rustfmt`, use `cargo fmt` to apply.
