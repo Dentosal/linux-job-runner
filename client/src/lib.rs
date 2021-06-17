@@ -67,9 +67,11 @@ impl Client {
             .expect("Server returned invalid JobId"))
     }
 
-    /// Cancels a job by sending `SIGKILL`.
+    /// Cancels a job.
+    /// This is done by sending a `SIGKILL` to the underlying process.
+    /// If the job has already terminated or stop has been called before, then this is a no-op.
     /// This is done asynchronously, and can return before the process has terminated.
-    /// If you must wait until the job has stopped, it can do so by calling `wait`.
+    /// If you must wait until the job has stopped, do so by calling `wait`.
     pub async fn stop(&mut self, jobid: JobId) -> DResult<()> {
         self.client
             .stop(tonic::Request::new(TargetJobId {
