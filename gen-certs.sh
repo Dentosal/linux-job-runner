@@ -34,6 +34,7 @@ done
 
 # Generate server root CA
 
+echo "Server root CA"
 cd ca_server
 openssl genrsa -out root-ca.key 4096
 openssl req -x509 -new -nodes -subj '/CN=ServerRootCA/O=Server root CA./C=US' \
@@ -43,6 +44,7 @@ cd ..
 
 # Generate client root CA
 
+echo "Client root CA"
 cd ca_client
 openssl genrsa -out root-ca.key 4096
 openssl req -x509 -new -nodes -subj '/CN=ClientRootCA/O=Client root CA./C=US' \
@@ -53,9 +55,9 @@ cd ..
 
 # Generate server certificate
 
+echo "Server"
 cd server
 openssl genrsa -out server.key 4096
-# openssl req -new -key server.key -subj '/CN=localhost/O=Server/C=US' -out server.csr
 openssl req -new -key server.key -out server.csr \
     -reqexts san -config $project_dir/gen-cert-conf/server.conf -extensions san
 openssl x509 -req -in server.csr -CA ../ca_server/root-ca.crt -CAkey ../ca_server/root-ca.key \
@@ -67,6 +69,7 @@ cd ..
 # Generate client certificate
 
 for d in client* ; do
+    echo "Client $d"
     cd $d
     openssl genrsa -out client.key 4096
     openssl req -new -key client.key -out client.csr \
