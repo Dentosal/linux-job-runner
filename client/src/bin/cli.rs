@@ -3,7 +3,7 @@ use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 
-use client::{Client, JobId, JobStartRequest, OutputStream, TlsConfig};
+use client::{Client, DResult, JobId, JobStartRequest, OutputStream, TlsConfig};
 
 #[derive(Clap)]
 #[clap(version, author)]
@@ -33,14 +33,19 @@ enum Operation {
     Output { jobid: String },
 }
 
-// TODO: better error formatting
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() {
     env_logger::init();
 
+    if let Err(err) = inner().await {
+        eprintln!("Error: {}", err);
+        std::process::exit(1);
+    }
+}
+
+async fn inner() -> DResult<()> {
     let opts: Opts = Opts::parse();
 
-    // TODO: handle errors nicer, maybe with "anyhow"?
     let tls = TlsConfig {
         server_root_ca_crt: fs::read(opts.server_root_ca_crt)?,
         client_crt: fs::read(opts.client_crt)?,

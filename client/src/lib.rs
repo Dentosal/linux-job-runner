@@ -9,7 +9,10 @@ use tonic::transport::{Certificate, Channel, ClientTlsConfig, Identity};
 use common::t_service_client::TServiceClient;
 use common::*;
 
+mod error;
+
 // Re-exports
+pub use self::error::{DResult, Error};
 pub use common::output_event::Stream as OutputStream;
 pub use common::{JobId, JobStartRequest};
 
@@ -22,10 +25,6 @@ pub struct TlsConfig {
     /// Contents of the PEM-formatted client private key file
     pub client_key: Vec<u8>,
 }
-
-// TODO: create a proper error type, and add conversions to it
-
-type DResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 pub struct Client {
     client: TServiceClient<Channel>,
@@ -61,10 +60,7 @@ impl Client {
     pub async fn start(&mut self, req: JobStartRequest) -> DResult<JobId> {
         let command = tonic::Request::new(req);
         let response = self.client.start(command).await?;
-        Ok(response
-            .into_inner()
-            .try_into()
-            .expect("Server returned invalid JobId"))
+        Ok(response.into_inner().try_into()?)
     }
 
     /// Cancels a job.
