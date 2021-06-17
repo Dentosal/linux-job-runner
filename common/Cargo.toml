@@ -14,3 +14,6 @@ tonic-build = {version = "0.4.2", features = ["prost"]}
 
 [dev-dependencies]
 portpicker = "0.1.0"
+tokio = {version = "1.6.1", features = ["full"]}
+
+client = {path = "../client"}
