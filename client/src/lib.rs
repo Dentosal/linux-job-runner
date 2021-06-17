@@ -32,7 +32,9 @@ pub struct Client {
 }
 impl Client {
     /// Connect to a job server
-    pub async fn connect(target: String, tls: TlsConfig) -> DResult<Self> {
+    pub async fn connect<T: Into<String>>(target: T, tls: TlsConfig) -> DResult<Self> {
+        let target: String = target.into();
+
         let server_root_ca_crt = Certificate::from_pem(tls.server_root_ca_crt);
         let client_identity = Identity::from_pem(tls.client_crt, tls.client_key);
 
