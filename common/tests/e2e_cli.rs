@@ -13,7 +13,7 @@ fn test_simple_ls() {
     let job_id = cli!(s, "start", "ls", "/");
 
     let status = cli!(s, "status", &job_id);
-    assert!(status.contains("Complete"));
+    assert!(status.contains("Completed(0)"));
 
     let output = cli!(s, "output", &job_id);
     assert!(output.contains("root"));
@@ -66,8 +66,7 @@ fn test_exit_code() {
     let job_id = cli!(s, "start", "ls", "/NONEXISTENT");
 
     let status = cli!(s, "status", &job_id);
-    assert!(status.contains("Complete"));
-    assert!(status.contains('2')); // Exit code ls returns for nonexistent files
+    assert!(status.contains("Completed(2)")); // Exit code ls returns for nonexistent files
 }
 
 #[test]

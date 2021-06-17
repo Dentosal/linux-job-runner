@@ -4,8 +4,6 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use client::{Client, JobId, JobStartRequest, OutputStream, TlsConfig};
-use common::job_status::Completed;
-use common::JobStatus;
 
 #[derive(Clap)]
 #[clap(version, author)]
@@ -58,10 +56,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Operation::Stop { jobid } => client.stop(JobId::parse(&jobid)?).await?,
         Operation::Status { jobid } => {
-            pretty_print_status(client.status(JobId::parse(&jobid)?).await?);
+            println!("{}", client.status(JobId::parse(&jobid)?).await?);
         }
         Operation::Wait { jobid } => {
-            pretty_print_status(client.wait(JobId::parse(&jobid)?).await?);
+            println!("{}", client.wait(JobId::parse(&jobid)?).await?);
         }
         Operation::Output { jobid } => {
             let (tx, mut rx) = tokio::sync::mpsc::channel(2);
@@ -85,15 +83,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-fn pretty_print_status(status: JobStatus) {
-    if let Some(result) = status.completed {
-        match result {
-            Completed::StatusCode(code) => println!("Completed {}", code),
-            Completed::Signal(signal) => println!("Signal {}", signal),
-        }
-    } else {
-        println!("Running");
-    }
 }
