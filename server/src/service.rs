@@ -141,7 +141,7 @@ impl TService for TServiceImpl {
     ) -> Result<Response<Self::OutputStream>, Status> {
         let client_name = authenticate(&request)?;
 
-        let (tx, rx) = tokio::sync::mpsc::channel(10);
+        let (tx, rx) = tokio::sync::mpsc::channel(2);
 
         self.target_job(request.into_inner(), &client_name, |job| {
             verify_authorized(&client_name, job)?;

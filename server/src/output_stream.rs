@@ -82,12 +82,21 @@ pub fn stream_to(from: Arc<OutputHandler>, to: Sender<Result<OutputEvent, tonic:
         let mut index = 0;
         loop {
             let h: &OutputHandler = from.borrow();
-            let state = h.state.read().await;
-            if index < state.history.len() {
+            let (output_if_any, completed): (Option<Vec<u8>>, bool) = {
+                let state = h.state.read().await;
+                let data = if index < state.history.len() {
+                    Some(state.history[index].clone())
+                } else {
+                    None
+                };
+                (data, state.completed)
+            };
+
+            if let Some(output) = output_if_any {
                 let send_result = to
                     .send(Ok(OutputEvent {
                         stream: h.stream_type as i32,
-                        output: state.history[index].clone(),
+                        output,
                     }))
                     .await;
 
@@ -100,7 +109,7 @@ pub fn stream_to(from: Arc<OutputHandler>, to: Sender<Result<OutputEvent, tonic:
                 }
 
                 index += 1;
-            } else if state.completed {
+            } else if completed {
                 // All content has been streamed
                 break;
             } else {
