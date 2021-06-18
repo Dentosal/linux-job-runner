@@ -82,7 +82,10 @@ pub fn stream_to(from: Arc<OutputHandler>, to: Sender<Result<OutputEvent, tonic:
         let mut index = 0;
         loop {
             let h: &OutputHandler = from.borrow();
-            let (output_if_any, completed): (Option<Vec<u8>>, bool) = {
+            // Create notification here to make sure that even if the output
+            // is pushed during the read, we still retry reading after that
+            let change_notification = h.notify.notified();
+            let (output_if_any, completed) = {
                 let state = h.state.read().await;
                 let data = if index < state.history.len() {
                     Some(state.history[index].clone())
@@ -114,7 +117,7 @@ pub fn stream_to(from: Arc<OutputHandler>, to: Sender<Result<OutputEvent, tonic:
                 break;
             } else {
                 // Wait until more output is available
-                h.notify.notified().await;
+                change_notification.await;
             }
         }
     });
