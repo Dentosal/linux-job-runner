@@ -1,37 +1,15 @@
 use std::sync::Arc;
 
 use tokio::sync::mpsc::Sender;
-use tokio::sync::RwLock;
+use tokio::sync::{Notify, RwLock};
 
 use common::output_event::Stream as OutputStream;
 use common::OutputEvent;
 
-use super::sync::MonotonicCounter;
-
 /// Internal state of the `OutputHandler`
 struct State {
-    /// Only expands, will not change when `completed` has been set
     history: Vec<Vec<u8>>,
-    /// Can only go from false -> true
     completed: bool,
-}
-
-impl State {
-    pub fn empty() -> Self {
-        Self {
-            history: Vec::new(),
-            completed: false,
-        }
-    }
-
-    /// Monotonically increasing generation number
-    pub fn generation(&self) -> usize {
-        if self.completed {
-            usize::MAX
-        } else {
-            self.history.len()
-        }
-    }
 }
 
 /// Handles a single output stream
@@ -41,14 +19,17 @@ pub struct OutputHandler {
     /// Internal state
     state: RwLock<State>,
     /// State change notification
-    notify: MonotonicCounter,
+    notify: Notify,
 }
 impl OutputHandler {
     pub fn new(stream_type: OutputStream) -> Self {
         Self {
             stream_type,
-            state: RwLock::new(State::empty()),
-            notify: MonotonicCounter::new(),
+            state: RwLock::new(State {
+                history: Vec::new(),
+                completed: false,
+            }),
+            notify: Notify::new(),
         }
     }
 
@@ -83,14 +64,14 @@ impl OutputHandler {
             "Trying to push more output to a completed stream"
         );
         state.history.push(data);
-        self.notify.update(state.generation()).await;
+        self.notify.notify_waiters();
     }
 
     /// Mark the process as complete. `push` must not be called after this.
     pub async fn complete(&self) {
         let mut state = self.state.write().await;
         state.completed = true;
-        self.notify.update(state.generation()).await;
+        self.notify.notify_waiters();
     }
 }
 
@@ -101,14 +82,14 @@ pub fn stream_to(from: Arc<OutputHandler>, to: Sender<Result<OutputEvent, tonic:
         let mut index = 0;
         loop {
             let h: &OutputHandler = from.borrow();
-            let (output_if_any, generation, completed) = {
+            let (output_if_any, completed): (Option<Vec<u8>>, bool) = {
                 let state = h.state.read().await;
                 let data = if index < state.history.len() {
                     Some(state.history[index].clone())
                 } else {
                     None
                 };
-                (data, state.generation(), state.completed)
+                (data, state.completed)
             };
 
             if let Some(output) = output_if_any {
@@ -133,7 +114,7 @@ pub fn stream_to(from: Arc<OutputHandler>, to: Sender<Result<OutputEvent, tonic:
                 break;
             } else {
                 // Wait until more output is available
-                h.notify.wait_until_after(generation).await;
+                h.notify.notified().await;
             }
         }
     });
