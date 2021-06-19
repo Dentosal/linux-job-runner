@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package common;
+
+service TService {
+    rpc Start (JobStartRequest) returns (TargetJobId);
+    rpc Stop (TargetJobId) returns (StopSignalSent);
+    rpc Status (TargetJobId) returns (JobStatus);
+    rpc Output (TargetJobId) returns (stream OutputEvent);
+}
+
+message JobStartRequest {
+    string path = 1;
+    repeated string args = 2;
+}
+
+message StopSignalSent {}
+
+message TargetJobId {
+    bytes jobid = 1;
+}
+
+message JobStatus {
+    oneof completed {               // Empty if still running
+        int32   status_code = 2;    // Completed normally
+        int32   signal = 3;         // Terminated by a signal
+    }
+}
+
+message OutputEvent {
+    enum Stream {
+        stdout = 0;
+        stderr = 1;
+    }
+    Stream stream = 1;
+    bytes output = 2;
+}

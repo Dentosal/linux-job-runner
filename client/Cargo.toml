@@ -1,0 +1,18 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+common = {path = "../common"}
+
+tonic = "0.4.3"
+tokio = {version = "1.6.1", features = ["full"]}
+log = "0.4.14"
+thiserror = "1.0.25"
+
+# Binary dependecies are still listed as library deps,
+# waiting for https://github.com/rust-lang/rfcs/pull/3020
+clap = "3.0.0-beta.2"
+env_logger = "0.8.3"
